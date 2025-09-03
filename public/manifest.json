@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Carrier Vetting Agent",
+  "description": "Vets carriers using DOT, FMCSA API, and reviews.",
+  "version": "1.0",
+  "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
+  "action": {
+    "default_title": "Carrier Vetting Agent"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  }
+}
