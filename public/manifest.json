@@ -4,6 +4,16 @@
   "description": "Vets carriers using DOT, FMCSA API, and reviews.",
   "version": "1.0",
   "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://pangents.deepfrog.ai/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_title": "Carrier Vetting Agent"
   },
