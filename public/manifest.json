@@ -1,7 +1,6 @@
 {
   "manifest_version": 3,
   "name": "Carrier Vetting Agent",
-  "description": "Vets carriers using DOT, FMCSA API, and reviews.",
   "version": "1.0",
   "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
   "background": {
@@ -10,14 +9,9 @@
   "content_scripts": [
     {
       "matches": ["https://pangents.deepfrog.ai/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "js": ["content.js"]
     }
   ],
-  "action": {
-    "default_title": "Carrier Vetting Agent"
-  },
-  "side_panel": {
-    "default_path": "index.html"
-  }
+  "action": { "default_title": "Carrier Vetting Agent" }, 
+  "side_panel": { "default_path": "index.html" }
 }

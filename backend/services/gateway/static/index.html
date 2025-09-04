@@ -1,0 +1,388 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pangents UI</title>
+  <style>
+    :root {
+      --primary: #2f6fed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --bg: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 20px 24px;
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    textarea {
+      height: 160px;
+    }
+
+    button {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid #d0d7e2;
+      background: #fff;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #0b1220;
+      color: #d1e2ff;
+      padding: 12px;
+      border-radius: 10px;
+      overflow: auto;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .kpi {
+      background: #0b1220;
+      color: #d1e2ff;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    canvas {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Pangents – Modular Logistics Agents</h1>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <label>Tenant</label>
+        <input id="tenant" value="demo-tenant" />
+        <button id="btnList" class="primary">List Agents</button>
+      </div>
+      <div id="agents" class="small" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <div class="row">
+            <label>Agent</label>
+            <input id="agentId" placeholder="e.g. freight_insights" value="freight_insights" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <label>Filters</label>
+            <input id="from" placeholder="from (ISO) e.g. 2025-01-01T00:00:00Z" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input id="to" placeholder="to (ISO) e.g. 2025-01-31T23:59:59Z" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input id="mode" placeholder="mode e.g. LTL, FTL, Parcel" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input id="carrier" placeholder="carrier e.g. CarrierA" />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="btnInvoke" class="primary">Run Insights</button>
+          </div>
+        </div>
+        <div>
+          <div class="kpis">
+            <div class="kpi">
+              <div class="small">On-time %</div>
+              <div id="kpi_otd" style="font-size:24px"></div>
+            </div>
+            <div class="kpi">
+              <div class="small">Avg Transit (h)</div>
+              <div id="kpi_transit" style="font-size:24px"></div>
+            </div>
+            <div class="kpi">
+              <div class="small">Cost/Shipment</div>
+              <div id="kpi_cost" style="font-size:24px"></div>
+            </div>
+            <div class="kpi">
+              <div class="small">Exceptions</div>
+              <div id="kpi_exc" style="font-size:24px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <canvas id="chart" height="240"></canvas>
+        </div>
+        <div>
+          <div class="row"><strong>Response</strong></div>
+          <pre id="resp"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Database Connection (Postgres)</h3>
+      <div class="grid-3">
+        <input id="pg_host" placeholder="host" />
+        <input id="pg_port" placeholder="port" value="5432" />
+        <input id="pg_db" placeholder="database" />
+      </div>
+      <div class="grid-3" style="margin-top:8px">
+        <input id="pg_user" placeholder="user" />
+        <input id="pg_pass" placeholder="password" type="password" />
+        <input id="pg_ssl" placeholder="sslmode (optional)" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnPgConnect" class="primary">Connect & Fetch Metadata</button>
+      </div>
+      <div id="pg_meta" class="small" style="margin-top:8px; max-height:200px; overflow:auto"></div>
+    </div>
+
+    <div class="card">
+      <h3>SQL Query</h3>
+      <textarea id="sql" placeholder="SELECT * FROM public.shipments LIMIT 10"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRunSql" class="primary">Run SQL</button>
+      </div>
+      <pre id="sql_result"></pre>
+    </div>
+
+    <div class="card">
+      <h3>Ask (Auto-route to Agent)</h3>
+      <input id="ask" placeholder="e.g., Show KPIs for January or Track SHP-123" />
+      <div class="row" style="margin-top:8px">
+        <label class="small">Optional context (JSON) – e.g., order_details mapping</label>
+      </div>
+      <textarea id="ask_ctx">{
+  "details_table": "public.order_details",
+  "details_order_id_col": "order_id",
+  "details_hour_id_col": "mage_hour_id",
+  "details_order_count_col": "order_count",
+  "details_order_duration_col": "order_duration",
+  "details_total_order_col": "total_order"
+}</textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnAsk" class="primary">Ask</button>
+      </div>
+      <pre id="ask_result"></pre>
+    </div>
+  </main>
+
+  <script>
+    const agentsDiv = document.getElementById('agents');
+    const respPre = document.getElementById('resp');
+
+    async function listAgents() {
+      try {
+        const res = await fetch('/agents');
+        const data = await res.json();
+        agentsDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        agentsDiv.textContent = 'Error: ' + e;
+      }
+    }
+
+    async function invoke() {
+      const tenant = document.getElementById('tenant').value.trim();
+      const agentId = document.getElementById('agentId').value.trim();
+      const from = document.getElementById('from').value.trim();
+      const to = document.getElementById('to').value.trim();
+      const mode = document.getElementById('mode').value.trim();
+      const carrier = document.getElementById('carrier').value.trim();
+      const input = {};
+      if (from) input.from = from;
+      if (to) input.to = to;
+      if (mode) input.mode = mode;
+      if (carrier) input.carrier = carrier;
+      try {
+        const res = await fetch('/invoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': tenant },
+          body: JSON.stringify({ agent_id: agentId, input })
+        });
+        const data = await res.json();
+        respPre.textContent = JSON.stringify(data, null, 2);
+        updateKpisAndChart(data);
+      } catch (e) {
+        respPre.textContent = 'Error: ' + e;
+      }
+    }
+
+    function updateKpisAndChart(data) {
+      const k = data?.output?.insights || {};
+      document.getElementById('kpi_otd').textContent = (k.on_time_delivery_pct ?? 0) + '%';
+      document.getElementById('kpi_transit').textContent = (k.avg_transit_time_hours ?? 0);
+      document.getElementById('kpi_cost').textContent = '$' + (k.cost_per_shipment_usd ?? 0);
+      document.getElementById('kpi_exc').textContent = (k.exceptions_count ?? 0);
+      const series = data?.output?.trends?.transit_time_daily || { labels: [], values: [] };
+      drawChart(series.labels, series.values);
+    }
+
+    function drawChart(labels, values) {
+      const canvas = document.getElementById('chart');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const pad = 30, w = canvas.width - pad * 2, h = canvas.height - pad * 2;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeRect(pad, pad, w, h);
+      if (!labels.length) return;
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+      const range = (max - min) || 1;
+      ctx.strokeStyle = '#2f6fed';
+      ctx.beginPath();
+      labels.forEach((_, i) => {
+        const x = pad + (i / (labels.length - 1)) * w;
+        const y = pad + (1 - (values[i] - min) / range) * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    document.getElementById('btnList').addEventListener('click', listAgents);
+    document.getElementById('btnInvoke').addEventListener('click', invoke);
+    document.getElementById('btnPgConnect').addEventListener('click', connectAndFetchMeta);
+    document.getElementById('btnRunSql').addEventListener('click', runSql);
+    document.getElementById('btnAsk').addEventListener('click', ask);
+
+    // Auto-load agents on first render
+    listAgents();
+
+    async function connectAndFetchMeta() {
+      const tenant = document.getElementById('tenant').value.trim();
+      const body = {
+        host: document.getElementById('pg_host').value.trim(),
+        port: Number(document.getElementById('pg_port').value.trim() || '5432'),
+        database: document.getElementById('pg_db').value.trim(),
+        user: document.getElementById('pg_user').value.trim(),
+        password: document.getElementById('pg_pass').value,
+        sslmode: document.getElementById('pg_ssl').value.trim() || undefined,
+      };
+      const res = await fetch('/connectors/postgres/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': tenant },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) { document.getElementById('pg_meta').textContent = await res.text(); return; }
+      const metaRes = await fetch('/connectors/postgres/metadata', { headers: { 'X-Tenant-Id': tenant } });
+      const meta = await metaRes.json();
+      document.getElementById('pg_meta').textContent = JSON.stringify(meta, null, 2);
+    }
+
+    async function runSql() {
+      const tenant = document.getElementById('tenant').value.trim();
+      const sql = document.getElementById('sql').value;
+      const res = await fetch('/connectors/postgres/query', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': tenant },
+        body: JSON.stringify({ sql })
+      });
+      const text = await res.text();
+      try { document.getElementById('sql_result').textContent = JSON.stringify(JSON.parse(text), null, 2); }
+      catch { document.getElementById('sql_result').textContent = text; }
+    }
+
+    async function ask() {
+      const tenant = document.getElementById('tenant').value.trim();
+      const question = document.getElementById('ask').value.trim();
+      let context = undefined;
+      const ctxText = document.getElementById('ask_ctx').value;
+      try { if (ctxText.trim()) context = JSON.parse(ctxText); } catch (e) {
+        document.getElementById('ask_result').textContent = 'Invalid context JSON: ' + e;
+        return;
+      }
+      const res = await fetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': tenant }, body: JSON.stringify({ question, context }) });
+      const text = await res.text();
+      try { document.getElementById('ask_result').textContent = JSON.stringify(JSON.parse(text), null, 2); }
+      catch { document.getElementById('ask_result').textContent = text; }
+    }
+  </script>
+</body>
+
+</html>
